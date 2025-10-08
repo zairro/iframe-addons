@@ -129,6 +129,10 @@
                 if (data && data.value) {
                     document.getElementById('titleText').value = data.value.text || '';
                     document.getElementById('titleAlign').value = data.value.align || 'center';
+                    // Set the heading level if available
+                    if (data.value.title) {
+                        document.getElementById('titleLevel').value = data.value.title;
+                    }
                     updatePreview();
                 }
             }
@@ -159,13 +163,14 @@
             const titleData = {
                 action: 'onSave',
                 data: {
-                    type: 'title',
+                    type: 'heading',
                     value: {
+                        title: level,
                         text: text,
                         align: document.getElementById('titleAlign').value,
                         size: sizes[level],
-                        bold: true,
-                        color: '#333333'
+                        color: '#333333',
+                        bold: true
                     }
                 }
             };
