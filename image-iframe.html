@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image AddOn - Iframe</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            padding: 30px;
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        h1 { color: #333; margin-bottom: 24px; font-size: 24px; }
+        label {
+            display: block;
+            color: #666;
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 8px;
+            margin-top: 16px;
+        }
+        input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+        input:focus { outline: none; border-color: #4facfe; }
+        .preview {
+            margin: 20px 0;
+            padding: 20px;
+            background: #f5f5f5;
+            border-radius: 8px;
+            text-align: center;
+        }
+        .preview img {
+            max-width: 100%;
+            max-height: 200px;
+            border-radius: 8px;
+        }
+        .button-group { display: flex; gap: 12px; margin-top: 24px; }
+        button {
+            flex: 1;
+            padding: 14px;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .btn-save { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white; }
+        .btn-cancel { background: #e0e0e0; color: #666; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🖼️ Add Image</h1>
+        
+        <label for="imgUrl">Image URL *</label>
+        <input type="url" id="imgUrl" placeholder="https://example.com/image.jpg" 
+               value="https://images.unsplash.com/photo-1557821552-17105176677c?w=800" 
+               oninput="updatePreview()">
+        
+        <label for="imgAlt">Alt Text (for accessibility) *</label>
+        <input type="text" id="imgAlt" placeholder="Description of the image" value="Beautiful landscape">
+        
+        <label for="imgLink">Link URL (optional)</label>
+        <input type="url" id="imgLink" placeholder="https://example.com">
+        
+        <div class="preview">
+            <img id="preview" src="https://images.unsplash.com/photo-1557821552-17105176677c?w=800" alt="Preview">
+        </div>
+        
+        <div class="button-group">
+            <button class="btn-save" onclick="save()">Insert Image</button>
+            <button class="btn-cancel" onclick="cancel()">Cancel</button>
+        </div>
+    </div>
+
+    <script>
+        window.parent.postMessage({
+            action: 'loaded',
+            data: { width: '700px', height: '600px', isRounded: true, hasTitleBar: true, showTitle: true }
+        }, '*');
+
+        window.addEventListener('message', (event) => {
+            const { action, data } = event.data;
+            if (action === 'load' && data.value) {
+                document.getElementById('imgUrl').value = data.value.src || '';
+                document.getElementById('imgAlt').value = data.value.alt || '';
+                document.getElementById('imgLink').value = data.value.href || '';
+                updatePreview();
+            }
+        });
+
+        function updatePreview() {
+            const url = document.getElementById('imgUrl').value;
+            if (url) document.getElementById('preview').src = url;
+        }
+
+        function save() {
+            const src = document.getElementById('imgUrl').value;
+            const alt = document.getElementById('imgAlt').value;
+            const href = document.getElementById('imgLink').value;
+            
+            if (!src || !alt) {
+                alert('Please fill in Image URL and Alt Text');
+                return;
+            }
+            
+            const imageData = {
+                type: 'image',
+                value: { src, alt }
+            };
+            
+            if (href) {
+                imageData.value.href = href;
+                imageData.value.target = '_blank';
+            }
+            
+            window.parent.postMessage({ action: 'onSave', data: imageData }, '*');
+        }
+
+        function cancel() {
+            window.parent.postMessage({ action: 'onCancel' }, '*');
+        }
+    </script>
+</body>
+</html>
