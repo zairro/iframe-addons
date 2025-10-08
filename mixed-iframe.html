@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mixed Content AddOn - Iframe</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            padding: 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 700px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        h1 { color: #333; margin-bottom: 12px; font-size: 24px; }
+        p { color: #666; margin-bottom: 24px; font-size: 14px; }
+        label {
+            display: block;
+            color: #666;
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 8px;
+            margin-top: 16px;
+        }
+        input, textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+        textarea {
+            height: 80px;
+            resize: vertical;
+        }
+        input:focus, textarea:focus { outline: none; border-color: #667eea; }
+        .section {
+            margin-bottom: 16px;
+            padding: 16px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+        .section-title {
+            color: #667eea;
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 12px;
+        }
+        .button-group { display: flex; gap: 12px; margin-top: 24px; }
+        button {
+            flex: 1;
+            padding: 14px;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .btn-save { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
+        .btn-cancel { background: #e0e0e0; color: #666; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📦 Create Content Block</h1>
+        <p>Build a complete content block with image, title, description, and button</p>
+        
+        <div class="section">
+            <div class="section-title">📸 Image</div>
+            <label for="mixedImg">Image URL</label>
+            <input type="url" id="mixedImg" placeholder="https://example.com/image.jpg" 
+                   value="https://images.unsplash.com/photo-1557821552-17105176677c?w=800">
+        </div>
+        
+        <div class="section">
+            <div class="section-title">📝 Content</div>
+            <label for="mixedTitle">Title</label>
+            <input type="text" id="mixedTitle" placeholder="Content title" value="Discover Amazing Features">
+            
+            <label for="mixedDesc">Description</label>
+            <textarea id="mixedDesc" placeholder="Description text">Experience the best service with our comprehensive features designed to make your life easier.</textarea>
+        </div>
+        
+        <div class="section">
+            <div class="section-title">🔘 Button</div>
+            <label for="mixedBtnText">Button Text</label>
+            <input type="text" id="mixedBtnText" placeholder="Button text" value="Learn More">
+            
+            <label for="mixedBtnUrl">Button URL</label>
+            <input type="url" id="mixedBtnUrl" placeholder="https://example.com" value="https://example.com">
+        </div>
+        
+        <div class="button-group">
+            <button class="btn-save" onclick="save()">Insert Content Block</button>
+            <button class="btn-cancel" onclick="cancel()">Cancel</button>
+        </div>
+    </div>
+
+    <script>
+        window.parent.postMessage({
+            action: 'loaded',
+            data: { width: '800px', height: '700px', isRounded: true, hasTitleBar: true, showTitle: true }
+        }, '*');
+
+        window.addEventListener('message', (event) => {
+            const { action, data } = event.data;
+            if (action === 'load' && data.value) {
+                const values = data.value;
+                // Try to extract values from mixed content array
+                if (Array.isArray(values)) {
+                    values.forEach(item => {
+                        if (item.type === 'image') {
+                            document.getElementById('mixedImg').value = item.value?.src || '';
+                        } else if (item.type === 'title') {
+                            document.getElementById('mixedTitle').value = item.value?.text || '';
+                        } else if (item.type === 'paragraph') {
+                            const tempDiv = document.createElement('div');
+                            tempDiv.innerHTML = item.value?.html || '';
+                            document.getElementById('mixedDesc').value = tempDiv.textContent || '';
+                        } else if (item.type === 'button') {
+                            document.getElementById('mixedBtnText').value = item.value?.label || '';
+                            document.getElementById('mixedBtnUrl').value = item.value?.href || '';
+                        }
+                    });
+                }
+            }
+        });
+
+        function save() {
+            const imgUrl = document.getElementById('mixedImg').value;
+            const title = document.getElementById('mixedTitle').value;
+            const desc = document.getElementById('mixedDesc').value;
+            const btnText = document.getElementById('mixedBtnText').value;
+            const btnUrl = document.getElementById('mixedBtnUrl').value;
+            
+            if (!imgUrl || !title || !desc) {
+                alert('Please fill in all required fields');
+                return;
+            }
+            
+            window.parent.postMessage({
+                action: 'onSave',
+                data: {
+                    type: 'mixed',
+                    value: [
+                        {
+                            type: 'image',
+                            value: {
+                                src: imgUrl,
+                                alt: title
+                            }
+                        },
+                        {
+                            type: 'title',
+                            value: {
+                                text: title,
+                                align: 'center',
+                                size: 28,
+                                color: '#333333'
+                            }
+                        },
+                        {
+                            type: 'paragraph',
+                            value: {
+                                html: `<p>${desc}</p>`,
+                                color: '#666666'
+                            }
+                        },
+                        {
+                            type: 'button',
+                            value: {
+                                label: btnText,
+                                href: btnUrl,
+                                'background-color': '#667eea',
+                                color: '#FFFFFF',
+                                'border-radius': 4,
+                                'padding-top': 12,
+                                'padding-right': 24,
+                                'padding-bottom': 12,
+                                'padding-left': 24
+                            }
+                        }
+                    ]
+                }
+            }, '*');
+        }
+
+        function cancel() {
+            window.parent.postMessage({ action: 'onCancel' }, '*');
+        }
+    </script>
+</body>
+</html>
