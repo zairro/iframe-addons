@@ -93,17 +93,44 @@
     <script>
         const sizes = { h1: 36, h2: 28, h3: 24, h4: 20 };
         
-        window.parent.postMessage({
-            action: 'loaded',
-            data: { width: '700px', height: '500px', isRounded: true, hasTitleBar: true, showTitle: true }
-        }, '*');
+        // Wait for DOM and send loaded message with delay
+        window.addEventListener('DOMContentLoaded', function() {
+            setTimeout(function() {
+                console.log('Sending loaded message to Beefree...');
+                
+                window.parent.postMessage({
+                    action: 'loaded',
+                    data: {
+                        width: '700px',
+                        height: '500px',
+                        isRounded: true,
+                        hasTitleBar: true,
+                        showTitle: true
+                    }
+                }, '*');
+                
+                console.log('Loaded message sent!');
+            }, 300); // 300ms delay to ensure proper loading
+        });
 
+        // Listen for init and load messages from Beefree
         window.addEventListener('message', (event) => {
-            const { action, data } = event.data;
-            if (action === 'load' && data.value) {
-                document.getElementById('titleText').value = data.value.text || '';
-                document.getElementById('titleAlign').value = data.value.align || 'center';
-                updatePreview();
+            console.log('Received message from Beefree:', event.data);
+            
+            const { action, data } = event.data || {};
+            
+            if (action === 'init') {
+                console.log('Initialized with locale:', data?.locale);
+            }
+            
+            if (action === 'load') {
+                console.log('Load action received with data:', data);
+                // Pre-fill when editing existing title
+                if (data && data.value) {
+                    document.getElementById('titleText').value = data.value.text || '';
+                    document.getElementById('titleAlign').value = data.value.align || 'center';
+                    updatePreview();
+                }
             }
         });
 
@@ -119,6 +146,8 @@
         }
 
         function save() {
+            console.log('Save button clicked');
+            
             const text = document.getElementById('titleText').value;
             if (!text.trim()) {
                 alert('Please enter heading text');
@@ -127,7 +156,7 @@
             
             const level = document.getElementById('titleLevel').value;
             
-            window.parent.postMessage({
+            const titleData = {
                 action: 'onSave',
                 data: {
                     type: 'title',
@@ -139,11 +168,19 @@
                         color: '#333333'
                     }
                 }
-            }, '*');
+            };
+            
+            console.log('Sending title data to Beefree:', titleData);
+            
+            window.parent.postMessage(titleData, '*');
         }
 
         function cancel() {
-            window.parent.postMessage({ action: 'onCancel' }, '*');
+            console.log('Cancel button clicked');
+            
+            window.parent.postMessage({
+                action: 'onCancel'
+            }, '*');
         }
     </script>
 </body>
