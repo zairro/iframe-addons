@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>List AddOn - Iframe</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            padding: 30px;
+            background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 650px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        h1 { color: #333; margin-bottom: 12px; font-size: 24px; }
+        p { color: #666; margin-bottom: 20px; font-size: 14px; }
+        label {
+            display: block;
+            color: #666;
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 8px;
+        }
+        select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 14px;
+            margin-bottom: 16px;
+        }
+        textarea {
+            width: 100%;
+            height: 200px;
+            padding: 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 14px;
+            line-height: 1.6;
+            resize: vertical;
+        }
+        textarea:focus, select:focus { outline: none; border-color: #a8edea; }
+        .button-group { display: flex; gap: 12px; margin-top: 20px; }
+        button {
+            flex: 1;
+            padding: 14px;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .btn-save { background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%); color: #333; }
+        .btn-cancel { background: #e0e0e0; color: #666; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📋 Create List</h1>
+        <p>Enter each list item on a new line</p>
+        
+        <label for="listType">List Type</label>
+        <select id="listType">
+            <option value="ul">Bulleted List (•)</option>
+            <option value="ol">Numbered List (1, 2, 3...)</option>
+        </select>
+        
+        <textarea id="listItems" placeholder="Item 1&#10;Item 2&#10;Item 3">Free shipping on orders over $50
+30-day money-back guarantee
+24/7 customer support
+Secure checkout</textarea>
+        
+        <div class="button-group">
+            <button class="btn-save" onclick="save()">Insert List</button>
+            <button class="btn-cancel" onclick="cancel()">Cancel</button>
+        </div>
+    </div>
+
+    <script>
+        window.parent.postMessage({
+            action: 'loaded',
+            data: { width: '700px', height: '500px', isRounded: true, hasTitleBar: true, showTitle: true }
+        }, '*');
+
+        window.addEventListener('message', (event) => {
+            const { action, data } = event.data;
+            if (action === 'load' && data.value) {
+                document.getElementById('listType').value = data.value.tag || 'ul';
+                const tempDiv = document.createElement('div');
+                tempDiv.innerHTML = data.value.html || '';
+                const listItems = Array.from(tempDiv.querySelectorAll('li'))
+                    .map(li => li.textContent)
+                    .join('\n');
+                document.getElementById('listItems').value = listItems;
+            }
+        });
+
+        function save() {
+            const listType = document.getElementById('listType').value;
+            const items = document.getElementById('listItems').value
+                .split('\n')
+                .filter(item => item.trim())
+                .map(item => `<li>${item.trim()}</li>`)
+                .join('');
+            
+            if (!items) {
+                alert('Please enter at least one list item');
+                return;
+            }
+            
+            window.parent.postMessage({
+                action: 'onSave',
+                data: {
+                    type: 'list',
+                    value: {
+                        tag: listType,
+                        html: `<${listType}>${items}</${listType}>`,
+                        color: '#333333'
+                    }
+                }
+            }, '*');
+        }
+
+        function cancel() {
+            window.parent.postMessage({ action: 'onCancel' }, '*');
+        }
+    </script>
+</body>
+</html>
